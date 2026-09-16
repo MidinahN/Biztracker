@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#172033"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="BizTracker"><link rel="apple-touch-icon" href="icon.svg"><meta name="apple-mobile-web-app-capable" content="yes"><link rel="manifest" href="manifest.json">
+<title>BizTracker — Sales Management</title>
+<style>
+*{box-sizing:border-box}
+:root{--navy:#102642;--navy2:#0c2039;--blue:#287be9;--bg:#f5f8fc;--text:#173257;--muted:#64748b;--line:#e2e8f0;--white:#fff}
+html,body{margin:0;min-height:100%;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+body{overflow-x:hidden}
+header{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 30px;position:sticky;top:0;z-index:30}
+.brand-mobile{display:none}
+.top-left{display:flex;align-items:center;gap:24px}.menu-btn{background:transparent!important;color:var(--navy)!important;font-size:28px!important;padding:4px 8px!important;min-height:auto}
+.shop-name{font-size:20px;font-weight:750;color:var(--navy)}
+.top-right{display:flex;align-items:center;gap:22px}.date{font-size:14px;color:#304866}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--navy);color:#fff;display:grid;place-items:center;font-weight:700}
+.role{font-size:14px;color:var(--navy)}.logout{background:#e9eef6!important;color:var(--navy)!important}
+.wrap{display:flex;min-height:calc(100vh - 76px)}
+nav{width:260px;flex:0 0 260px;background:linear-gradient(180deg,var(--navy),var(--navy2));padding:24px 14px;position:fixed;left:0;top:0;bottom:0;z-index:40;overflow:auto}
+nav .logo{color:#fff;font-weight:800;font-size:28px;padding:2px 16px}.logo span{color:#28a9ed}
+nav .tagline{color:#d5dfeb;font-size:10px;padding:0 16px 24px}
+.nav{display:flex;align-items:center;gap:13px;width:100%;border:0;background:transparent;color:#e8eef8;text-align:left;padding:13px 16px;margin:3px 0;border-radius:9px;cursor:pointer;font-size:15px}
+.nav.active{background:var(--blue);color:#fff;font-weight:700}.nav:hover{background:#ffffff12}
+main{margin-left:260px;padding:38px 38px 50px;max-width:1600px;width:calc(100% - 260px)}
+h2{margin:0;font-size:38px;line-height:1.15;color:var(--navy)}h2+p{margin-top:9px}
+.muted{color:var(--muted);font-size:14px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:30px}
+.card{background:#fff;border:1px solid var(--line);border-radius:13px;padding:20px;box-shadow:0 2px 8px #1720330b}
+.metric{font-size:26px;font-weight:800;margin-top:8px;color:var(--navy)}
+.grid .card{min-height:126px}
+.section{display:none}.section.show{display:block}
+.dashboard-cards .card:nth-child(1){background:linear-gradient(135deg,#f4fff7,#fff)}
+.dashboard-cards .card:nth-child(2){background:linear-gradient(135deg,#f5faff,#fff)}
+.dashboard-cards .card:nth-child(3){background:linear-gradient(135deg,#fff9f3,#fff)}
+.dashboard-cards .card:nth-child(4){background:linear-gradient(135deg,#faf7ff,#fff)}
+.secondary{background:#e9eef6;color:var(--navy)}button,.btn{background:var(--blue);color:#fff;border:0;border-radius:8px;padding:10px 14px;cursor:pointer;min-height:42px}
+input,select{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:7px;background:#fff;font:inherit;min-height:42px}
+label{font-size:12px;color:#596579;display:block;margin-bottom:5px}.formgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.formgrid .wide{grid-column:span 2}
+.tablewrap{overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}table{width:100%;border-collapse:collapse}
+th,td{padding:13px;border-bottom:1px solid #edf0f5;text-align:left;font-size:13px;white-space:nowrap}th{background:#f8fafc;color:#58708f}
+.pill{padding:5px 9px;border-radius:20px;font-size:11px}.paid{background:#dff5e5;color:#16803c}.partial{background:#fff0c9;color:#a46300}.unpaid{background:#ffdede;color:#c62828}
+.alert{padding:12px;border-radius:8px;background:#fff3cd;margin-bottom:10px}.login{max-width:420px;margin:80px auto}.login button{width:100%;margin-top:10px}.hidden{display:none!important}
+.dashboard-sub{margin:0;color:#60728b}.overview-row{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:18px}
+.overview-row .card{min-height:120px}.section-title{display:flex;align-items:end;justify-content:space-between;margin:30px 0 14px}
+.recent-title{font-size:24px;margin:0}.view-all{color:var(--blue);font-weight:700}
+.quick-actions{display:flex;gap:10px;margin-top:18px}.quick-actions button{flex:1}
+.drawer-backdrop{display:none}
+.item-picker{position:relative}.item-suggestions{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid #cbd5e1;border-radius:0 0 9px 9px;box-shadow:0 8px 20px #17203322;max-height:220px;overflow:auto}.item-suggestions.open{display:block}.item-suggestion{padding:12px 14px;cursor:pointer;border-bottom:1px solid #edf0f5;font-size:15px}.item-suggestion:last-child{border-bottom:0}.item-suggestion:hover,.item-suggestion:active{background:#eef5ff}.stock-empty{padding:14px;color:#64748b;font-size:13px}
+.voided-row{opacity:.72;background:#fff7f7}.voided-pill{background:#ffe1e1;color:#a11b1b}.void-btn{background:#fff1f1!important;color:#a11b1b!important;border:1px solid #f0b6b6!important}.void-note{font-size:11px;color:#a11b1b;margin-top:4px}
+.mobile-bottom-nav,.ios-tabbar{display:none}
+@media(max-width:1100px){
+ .grid{grid-template-columns:repeat(2,1fr)}.overview-row{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:760px){
+ header{height:68px;padding:0 14px}.brand-mobile{display:block}.brand-mobile strong{font-size:19px}.brand-mobile small{display:block;font-size:9px;color:var(--muted)}
+ .top-left{gap:8px}.shop-name,.date{display:none}.top-right{gap:9px}.role{font-size:13px}.avatar{width:38px;height:38px}.logout{font-size:13px;padding:8px 10px!important}
+ nav{display:none;position:fixed;left:0;top:0;bottom:0;width:270px}.wrap{display:block;min-height:calc(100vh - 68px)}
+ main{margin-left:0;width:100%;padding:24px 16px 40px}
+ h2{font-size:31px}.grid,.overview-row{grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.grid .card,.overview-row .card{min-height:105px;padding:15px}.metric{font-size:21px}
+ .dashboard-sub{font-size:13px}.section-title{margin-top:24px}.recent-title{font-size:21px}
+ .drawer-backdrop{position:fixed;inset:0;background:#0008;z-index:35}.drawer-backdrop.open{display:block}
+ nav.open{display:block}
+ .quick-actions{flex-direction:column}
+ .formgrid{grid-template-columns:1fr}.formgrid .wide{grid-column:span 1}
+}
+</style>
+
+<style>
+:root{--primary:#263bdb;--surface:#fff;--bg:#f5f7fb}
+button,.btn{min-height:42px}
+.mobile-bottom-nav{display:none}
+@media(max-width:800px){
+  body{padding-bottom:72px}
+  .mobile-bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;height:64px;background:#fff;border-top:1px solid #dfe4ec;z-index:20;box-shadow:0 -2px 10px #00000010;padding-bottom:env(safe-area-inset-bottom)}
+  .mobile-bottom-nav button{flex:1;border:0;background:#fff;color:#4f5b70;min-height:64px;padding:5px 2px;border-radius:0;font-size:20px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .mobile-bottom-nav button span{font-size:10px;margin-top:2px}
+  .mobile-bottom-nav button:active{background:#edf2ff;color:var(--primary)}
+  main{padding-bottom:18px}
+  input,select{font-size:16px;min-height:44px}
+  table{min-width:720px}
+}
+@media(min-width:801px){.mobile-bottom-nav{display:none}}
+</style>
+
+<style>
+.ios-tabbar{display:none}
+@media (max-width:800px){
+  body{padding-bottom:84px}
+  .mobile-bottom-nav{display:none!important}
+  .ios-tabbar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;
+    height:74px;padding:7px 4px calc(7px + env(safe-area-inset-bottom));
+    background:rgba(255,255,255,.94);backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);border-top:1px solid #d9dce3;
+    z-index:30;box-shadow:0 -3px 14px rgba(0,0,0,.08)
+  }
+  .ios-tabbar button{
+    flex:1;border:0;background:transparent;color:#6b7280;
+    min-height:58px;border-radius:12px;padding:4px 2px;
+    font-size:11px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:2px
+  }
+  .ios-tabbar button:active,.ios-tabbar button:hover{
+    background:#f1f2f6;color:#263bdb
+  }
+  .ios-icon{font-size:22px;line-height:22px}
+  header{padding-top:max(14px,env(safe-area-inset-top))}
+  input,select,button{font-size:16px}
+}
+@media(min-width:801px){.ios-tabbar{display:none!important}}
+</style>
+
+<style>
+/* BizTracker mobile drawer behavior */
+@media(max-width:760px){
+  nav.open{display:block!important}
+  nav:not(.open){display:none!important}
+  .drawer-backdrop.open{display:block!important}
+}
+</style>
+</head>
+<body>
+<div id="login" class="login card">
+<h1>BizTracker</h1><p class="muted">sales management at your finger tips</p>
+<label>Business name</label><input id="biz" placeholder="ABC Shop">
+<label style="margin-top:10px">Login as</label><select id="role"><option>Owner</option><option>Attendant</option></select>
+<button type="button" id="loginBtn" onclick="login()">Enter BizTracker</button>
+<p class="small muted">Prototype demo: data is stored locally in this browser.</p>
+</div>
+
+<div id="app" class="hidden">
+<header>
+  <div class="top-left">
+    <button class="menu-btn" onclick="toggleMenu()">☰</button>
+    <div class="brand-mobile"><strong>BizTracker</strong><small>sales management at your finger tips</small></div>
+    <div class="shop-name" id="shopHeader">ABC Shop</div>
+  </div>
+  <div class="top-right">
+    <div class="date" id="headerDate"></div>
+    <div class="avatar">O</div>
+    <div class="role" id="userLabel">Owner</div>
+    <button class="logout" onclick="logout()">Log out</button>
+  </div>
+</header>
+<div class="wrap"><nav id="sidebar">
+  <div class="logo">Biz<span>Tracker</span></div>
+  <div class="tagline">sales management at your finger tips</div>
+  <button class="nav active" onclick="show('dashboard',this)">⌂ <span>Dashboard</span></button>
+  <button class="nav" onclick="show('sales',this)">🛒 <span>Sales</span></button>
+  <button class="nav" onclick="show('debtors',this)">👥 <span>Debtors</span></button>
+  <button class="nav" onclick="show('stock',this)">▣ <span>Stock</span></button>
+  <button class="nav" onclick="show('expenses',this)">▤ <span>Expenses</span></button>
+  <button class="nav" onclick="show('reports',this)">▥ <span>Reports</span></button>
+  <button class="nav ownerOnly" onclick="show('audit',this)">◷ <span>Audit Trail</span></button>
+  <button class="nav ownerOnly" onclick="show('users',this)">👤 <span>Users & Rights</span></button>
+  <button class="nav" onclick="show('calculator',this)">▦ <span>Calculator</span></button>
+</nav>
+
+<div class="ios-tabbar">
+  <button onclick="showById('dashboard')"><span class="ios-icon">⌂</span><span>Home</span></button>
+  <button onclick="showById('sales')"><span class="ios-icon">＋</span><span>Sales</span></button>
+  <button onclick="showById('debtors')"><span class="ios-icon">◉</span><span>Debtors</span></button>
+  <button onclick="showById('stock')"><span class="ios-icon">▣</span><span>Stock</span></button>
+  <button onclick="showById('reports')"><span class="ios-icon">▤</span><span>Reports</span></button>
+</div>
+<div class="mobile-bottom-nav">
+  <button onclick="showById('dashboard')">⌂<span>Home</span></button>
+  <button onclick="showById('sales')">＋<span>Sale</span></button>
+  <button onclick="showById('stock')">▣<span>Stock</span></button>
+  <button onclick="showById('reports')">▤<span>Reports</span></button>
+  <button onclick="showById('calculator')">＋<span>Calc</span></button>
+</div>
+<div class="drawer-backdrop" id="drawerBackdrop" onclick="toggleMenu()"></div><main>
+
+<section id="dashboard" class="section show">
+<h2>Dashboard</h2>
+<p class="dashboard-sub">Here's your business overview for today.</p>
+<div class="grid dashboard-cards">
+<div class="card"><div class="muted">Total Sales</div><div id="mSales" class="metric">UGX 0</div><div class="muted" style="margin-top:10px">Today's sales</div></div>
+<div class="card"><div class="muted">Collected</div><div id="mPaid" class="metric">UGX 0</div><div class="muted" style="margin-top:10px">Payments received</div></div>
+<div class="card"><div class="muted">Outstanding</div><div id="mDebt" class="metric">UGX 0</div><div class="muted" style="margin-top:10px">Amount still owed</div></div>
+<div class="card"><div class="muted">Expenses</div><div id="mExp" class="metric">UGX 0</div><div class="muted" style="margin-top:10px">Today's expenses</div></div>
+</div>
+<div class="overview-row">
+<div class="card"><div class="muted">Stock Alerts</div><div class="metric" id="stockAlertCount">0</div><div class="muted">Items at 50% or below</div></div>
+<div class="card"><div class="muted">Customers Owing</div><div class="metric" id="customerDebtCount">0</div><div class="muted">Customers with balances</div></div>
+<div class="card"><div class="muted">Transactions</div><div class="metric" id="transactionCount">0</div><div class="muted">Today's transactions</div></div>
+<div class="card"><div class="muted">Net After Expenses</div><div class="metric" id="netToday">UGX 0</div><div class="muted">Collected less expenses</div></div>
+</div>
+<div class="section-title"><h3 class="recent-title">Recent Sales</h3><span class="view-all">View All ›</span></div>
+<div class="tablewrap"><table><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Total</th><th>Payment Status</th><th>Customer</th><th>Actions</th></tr></thead><tbody id="recentSalesBody"></tbody></table></div>
+<div class="card" style="margin-top:18px"><h3>Quick Actions</h3><div class="quick-actions"><button onclick="showById('sales')">＋ New Sale</button><button onclick="showById('expenses')">＋ Expense</button><button onclick="showById('stock')">＋ Stock</button><button onclick="showById('reports')">View Reports</button></div></div>
+</section>
+
+<section id="sales" class="section"><h2>Sales</h2>
+<div class="card"><div class="formgrid">
+<div class="item-picker"><label>Item sold <small style="color:#6b7785">Start typing to select stock, or enter a new item.</small></label><input id="sItem" autocomplete="off" placeholder="Type to choose a stock item or enter a new item"><div id="itemSuggestions" class="item-suggestions"></div></div><div><label>Quantity</label><input id="sQty" type="number" min="1"></div>
+<div><label>Unit selling price</label><input id="sPrice" type="number" min="0"></div><div><label>Amount paid</label><input id="sPaid" type="number" min="0"></div>
+<div><label>Customer name (optional)</label><input id="sCustomer"></div><div><label>WhatsApp number (optional)</label><input id="sPhone" placeholder="2567..."></div>
+<div><label>Date</label><input id="sDate" type="date"></div><div><label>&nbsp;</label><button onclick="addSale()">Record sale</button></div>
+</div></div><p class="muted" style="margin:10px 2px 0">Sales are never permanently deleted. The Owner can void an incorrect sale; voiding keeps the record in the audit trail and restores linked stock.</p><br><div class="tablewrap"><table><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead><tbody id="salesBody"></tbody></table></div></section>
+
+<section id="debtors" class="section"><h2>Debtors</h2><div class="tablewrap"><table><thead><tr><th>Customer</th><th>Phone</th><th>Item</th><th>Balance</th><th>Date</th><th>Reminder</th></tr></thead><tbody id="debtBody"></tbody></table></div></section>
+
+<section id="stock" class="section"><h2>Stock</h2>
+<div class="card"><div class="formgrid"><div><label>Item</label><input id="stItem"></div><div><label>Quantity</label><input id="stQty" type="number"></div><div><label>Selling price</label><input id="stPrice" type="number"></div><div><label>&nbsp;</label><button onclick="addStock()">Add stock</button></div></div></div><br>
+<div class="tablewrap"><table><thead><tr><th>Item</th><th>Quantity</th><th>Selling price</th><th>50% alert</th><th>Action</th></tr></thead><tbody id="stockBody"></tbody></table></div></section>
+
+<section id="expenses" class="section"><h2>Expenses</h2>
+<div class="card"><div class="formgrid"><div><label>Category</label><input id="eCat" placeholder="Rent, transport..."></div><div class="wide"><label>Description</label><input id="eDesc"></div><div><label>Amount</label><input id="eAmt" type="number"></div><div><label>Date</label><input id="eDate" type="date"></div><div><label>&nbsp;</label><button onclick="addExpense()">Add expense</button></div></div></div><br>
+<div class="tablewrap"><table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Recorded by</th></tr></thead><tbody id="expBody"></tbody></table></div></section>
+
+<section id="reports" class="section"><h2>Reports</h2><div class="toolbar"><button onclick="dailyReport()">Generate today's report</button><button class="secondary" onclick="monthlyReport()">Generate monthly report</button><button class="secondary" onclick="emailReport()">Email report</button></div><div id="reportBox" class="card"><p class="muted">Choose a report.</p></div></section>
+
+<section id="audit" class="section"><h2>Audit Trail</h2><p class="muted">Read-only activity history. Owner only.</p><div class="tablewrap"><table><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></section>
+
+<section id="users" class="section"><h2>Users & Rights</h2><div class="card"><p>Owner controls what attendants can access.</p>
+<div class="formgrid">
+<label><input type="checkbox" checked> Record sales</label><label><input type="checkbox" checked> View stock</label><label><input type="checkbox"> Edit sales</label><label><input type="checkbox"> Void sales</label><label><input type="checkbox"> Add expenses</label><label><input type="checkbox"> View debtors</label><label><input type="checkbox"> Send receipts</label><label><input type="checkbox"> Send reminders</label>
+</div><br><button onclick="alert('Permissions saved in the production version.')">Save permissions</button></div></section>
+
+<section id="calculator" class="section"><h2>Calculator</h2><div class="card" style="max-width:420px"><input id="calc" readonly style="font-size:22px;text-align:right"><div class="formgrid" style="grid-template-columns:repeat(4,1fr);margin-top:10px">
+<button onclick="cp('7')">7</button><button onclick="cp('8')">8</button><button onclick="cp('9')">9</button><button onclick="cp('/')">÷</button>
+<button onclick="cp('4')">4</button><button onclick="cp('5')">5</button><button onclick="cp('6')">6</button><button onclick="cp('*')">×</button>
+<button onclick="cp('1')">1</button><button onclick="cp('2')">2</button><button onclick="cp('3')">3</button><button onclick="cp('-')">−</button>
+<button onclick="cp('0')">0</button><button onclick="cp('.')">.</button><button onclick="ce()">C</button><button onclick="cp('+')">+</button>
+</div><button style="width:100%;margin-top:8px" onclick="eq()">=</button></div></section>
+
+</main></div></div>
+<script>
+const K='biztrack_v1';
+let data=JSON.parse(localStorage.getItem(K)||'null')||{biz:'',role:'',sales:[],stock:[],expenses:[],audit:[]};
+data.sales=Array.isArray(data.sales)?data.sales:[]; data.stock=Array.isArray(data.stock)?data.stock:[]; data.expenses=Array.isArray(data.expenses)?data.expenses:[]; data.audit=Array.isArray(data.audit)?data.audit:[];
+let today=()=>new Date().toISOString().slice(0,10), money=n=>'UGX '+Number(n||0).toLocaleString();
+function $(id){return document.getElementById(id)}
+function save(){localStorage.setItem(K,JSON.stringify(data));render()}
+function log(action,details){data.audit.unshift({time:new Date().toLocaleString(),user:data.role,role:data.role,action,details})}
+function login(){try{const bizEl=$('biz'),roleEl=$('role');data.biz=(bizEl&&bizEl.value.trim())||'My Business';data.role=(roleEl&&roleEl.value)||'Owner';$('login').classList.add('hidden');$('app').classList.remove('hidden');log('Login','Signed in');localStorage.setItem(K,JSON.stringify(data));render();show('dashboard',document.querySelector('.nav'));}catch(err){console.error(err);alert('BizTracker could not open. Please refresh the page and try again.')}}
+function logout(){$('app').classList.add('hidden');$('login').classList.remove('hidden')}
+function show(id,el){document.querySelectorAll('.section').forEach(x=>x.classList.remove('show'));const section=$(id);if(section)section.classList.add('show');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');const sidebar=document.querySelector('nav'),backdrop=$('drawerBackdrop');if(sidebar)sidebar.classList.remove('open');if(backdrop)backdrop.classList.remove('open');document.body.classList.remove('menu-open');if(id==='sales')updateItemSuggestions($('sItem')?.value||'')}
+function status(total,paid){return paid>=total?'Fully paid':paid>0?'Partially paid':'Unpaid'}
+function addStock(){const item=$('stItem').value.trim(),qty=Number($('stQty').value),price=Number($('stPrice').value);if(!item||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0)return alert('Enter item, quantity and selling price.');let existing=data.stock.find(s=>String(s.item).trim().toLowerCase()===item.toLowerCase());if(existing){const old=Number(existing.qty)||0;existing.qty=old+qty;existing.price=price;log('Stock added',`${existing.item}: ${old} → ${existing.qty} (+${qty})`)}else{data.stock.push({id:Date.now(),item,qty,price});log('Stock added',`${item}: ${qty} units at ${money(price)}`)}$('stItem').value='';$('stQty').value='';$('stPrice').value='';save();alert('Stock added successfully.')}
+function selectStockItem(item){$('sItem').value=item.item;$('sPrice').value=Number(item.price)||0;closeItemSuggestions();$('sQty').focus()}
+function closeItemSuggestions(){const box=$('itemSuggestions');if(box)box.classList.remove('open')}
+function updateItemSuggestions(query){const box=$('itemSuggestions');if(!box)return;const q=String(query||'').trim().toLowerCase();const matches=data.stock.filter(s=>String(s.item).toLowerCase().includes(q));box.innerHTML='';if(!matches.length){closeItemSuggestions();return}matches.forEach(item=>{const row=document.createElement('div');row.className='item-suggestion';row.textContent=`${item.item} — ${item.qty} in stock — ${money(item.price)}`;row.addEventListener('mousedown',e=>{e.preventDefault();selectStockItem(item)});box.appendChild(row)});box.classList.add('open')}
+function addSale(){const item=$('sItem').value.trim(),qty=Number($('sQty').value),price=Number($('sPrice').value),paid=Number($('sPaid').value)||0;if(!item||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0)return alert('Enter item, quantity and price.');const stockItem=data.stock.find(s=>String(s.item).trim().toLowerCase()===item.toLowerCase());if(stockItem){const available=Number(stockItem.qty)||0;if(qty>available)return alert(`Insufficient stock for ${stockItem.item}. Available: ${available}.`);stockItem.qty=available-qty;log('Stock reduced by sale',`${stockItem.item}: ${available} → ${stockItem.qty} (${qty} sold)`)}const total=qty*price;const actualPaid=Math.min(Math.max(paid,0),total);data.sales.unshift({id:Date.now(),date:$('sDate').value||today(),item,qty,price,total,paid:actualPaid,customer:$('sCustomer').value.trim(),phone:$('sPhone').value.trim()});log('Sale recorded',`${item}, qty ${qty}, total ${money(total)}, paid ${money(actualPaid)}`);['sItem','sQty','sPrice','sPaid','sCustomer','sPhone'].forEach(id=>$(id).value='');$('sDate').value=today();closeItemSuggestions();save();alert(stockItem?`Sale recorded. ${stockItem.item} stock is now ${stockItem.qty}.`:'Sale recorded.')}
+function voidSale(id){
+  if((data.role||'').toLowerCase()!=='owner')return alert('Only the Owner can void a sale.');
+  const i=data.sales.findIndex(x=>x.id===id);if(i<0)return;
+  const sale=data.sales[i];
+  if(sale.voided)return alert('This sale has already been voided.');
+  const ok=confirm(`Void this sale?\n\n${sale.item} × ${sale.qty} — ${money(sale.total)}\n\nThe sale will remain in the records, be excluded from reports, and stock will be restored.`);
+  if(!ok)return;
+  const reason=prompt('Enter the reason for voiding this sale:','Incorrect sale entry');
+  if(reason===null)return;
+  const cleanReason=reason.trim();
+  if(!cleanReason)return alert('A reason is required before a sale can be voided.');
+  const stockItem=data.stock.find(s=>String(s.item).trim().toLowerCase()===String(sale.item).trim().toLowerCase());
+  if(stockItem){
+    const before=Number(stockItem.qty)||0;
+    stockItem.qty=before+(Number(sale.qty)||0);
+    log('Stock restored after sale void',`${stockItem.item}: ${before} → ${stockItem.qty} (+${sale.qty})`);
+  }else{
+    log('Sale voided — stock item not found',`${sale.item}, qty ${sale.qty}; stock could not be restored because the stock item no longer exists.`);
+  }
+  sale.voided=true;
+  sale.voidedAt=new Date().toLocaleString();
+  sale.voidedBy=data.role||'Owner';
+  sale.voidReason=cleanReason;
+  log('Sale voided',`${sale.item}, qty ${sale.qty}, total ${money(sale.total)}, reason: ${cleanReason}`);
+  save();
+  alert('Sale voided successfully. The transaction remains in the records and will no longer count in reports.');
+}
+function deleteStock(id){if(!confirm('Delete this stock item?'))return;const i=data.stock.findIndex(x=>x.id===id);if(i<0)return;log('Stock deleted',data.stock[i].item);data.stock.splice(i,1);save()}
+function addExpense(){const cat=$('eCat').value.trim(),desc=$('eDesc').value.trim(),amt=Number($('eAmt').value),date=$('eDate').value||today();if(!cat||!Number.isFinite(amt)||amt<0)return alert('Enter expense category and amount.');data.expenses.unshift({id:Date.now(),cat,desc,amt,date,user:data.role});log('Expense added',`${cat}: ${money(amt)}`);['eCat','eDesc','eAmt'].forEach(id=>$(id).value='');$('eDate').value=today();save()}
+function render(){if($('shopHeader'))$('shopHeader').textContent=data.biz||'My Business';if($('userLabel'))$('userLabel').textContent=data.role||'Owner';if($('headerDate'))$('headerDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});const t=today(),salesToday=data.sales.filter(x=>x.date===t&&!x.voided),expToday=data.expenses.filter(x=>x.date===t);const total=salesToday.reduce((a,x)=>a+Number(x.total||0),0),paid=salesToday.reduce((a,x)=>a+Number(x.paid||0),0),exp=expToday.reduce((a,x)=>a+Number(x.amt||0),0);if($('mSales'))$('mSales').textContent=money(total);if($('mPaid'))$('mPaid').textContent=money(paid);if($('mDebt'))$('mDebt').textContent=money(total-paid);if($('mExp'))$('mExp').textContent=money(exp);if($('stockAlertCount'))$('stockAlertCount').textContent=data.stock.filter(s=>Number(s.qty)<=Math.max(1,Number(s.startQty||s.qty)*0.5)).length;if($('transactionCount'))$('transactionCount').textContent=salesToday.length;if($('netToday'))$('netToday').textContent=money(paid-exp);const customers=new Set(salesToday.filter(x=>Number(x.total||0)>Number(x.paid||0)&&x.customer).map(x=>x.customer.trim().toLowerCase()));if($('customerDebtCount'))$('customerDebtCount').textContent=customers.size;
+const stockBody=$('stockBody');if(stockBody){stockBody.innerHTML='';data.stock.forEach(s=>{const tr=document.createElement('tr'),alertAt=(Number(s.startQty||s.qty)||0)*0.5;tr.innerHTML=`<td>${escapeHtml(s.item)}</td><td>${Number(s.qty)||0}</td><td>${money(s.price)}</td><td>${Number(s.qty)<=alertAt?'⚠ Low':'OK'}</td><td><button class="secondary" onclick="deleteStock(${s.id})">Delete</button></td>`;stockBody.appendChild(tr)})}
+const salesBody=$('salesBody');if(salesBody){salesBody.innerHTML='';data.sales.forEach(x=>{const bal=Number(x.total||0)-Number(x.paid||0),tr=document.createElement('tr');if(x.voided)tr.className='voided-row';const statusHtml=x.voided?`<span class="pill voided-pill">Voided</span><div class="void-note">${escapeHtml(x.voidReason||'No reason recorded')}</div>`:`<span class="pill ${bal<=0?'paid':x.paid>0?'partial':'unpaid'}">${status(x.total,x.paid)}</span>`;const actionHtml=x.voided?`<span class="muted">Voided ${escapeHtml(x.voidedAt||'')}</span>`:`<button class="void-btn" onclick="voidSale(${x.id})">Void sale</button>`;tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.item)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td>${money(x.paid)}</td><td>${money(bal)}</td><td>${statusHtml}</td><td>${actionHtml}</td>`;salesBody.appendChild(tr)})}
+const recent=$('recentSalesBody');if(recent){recent.innerHTML='';data.sales.slice(0,8).forEach(x=>{const tr=document.createElement('tr');const st=x.voided?`<span class="pill voided-pill">Voided</span>`:`<span class="pill ${Number(x.paid)>=Number(x.total)?'paid':Number(x.paid)>0?'partial':'unpaid'}">${status(x.total,x.paid)}</span>`;tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.item)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td>${st}</td><td>${escapeHtml(x.customer||'—')}</td><td>—</td>`;recent.appendChild(tr)})}
+const debtBody=$('debtBody');if(debtBody){debtBody.innerHTML='';data.sales.filter(x=>!x.voided&&Number(x.total)>Number(x.paid)&&x.customer).forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.customer)}</td><td>${escapeHtml(x.phone||'')}</td><td>${escapeHtml(x.item)}</td><td>${money(Number(x.total)-Number(x.paid))}</td><td>${escapeHtml(x.date)}</td><td>—</td>`;debtBody.appendChild(tr)})}
+const expBody=$('expBody');if(expBody){expBody.innerHTML='';data.expenses.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.cat)}</td><td>${escapeHtml(x.desc||'')}</td><td>${money(x.amt)}</td><td>${escapeHtml(x.user||'')}</td>`;expBody.appendChild(tr)})}
+const auditBody=$('auditBody');if(auditBody){auditBody.innerHTML='';data.audit.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.time)}</td><td>${escapeHtml(x.user||'')}</td><td>${escapeHtml(x.role||'')}</td><td>${escapeHtml(x.action||'')}</td><td>${escapeHtml(x.details||'')}</td>`;auditBody.appendChild(tr)})}updateItemSuggestions($('sItem')?.value||'')}
+function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+
+function dailyReport(){let s=data.sales.filter(x=>x.date===today()&&!x.voided),e=data.expenses.filter(x=>x.date===today()),total=s.reduce((a,x)=>a+x.total,0),paid=s.reduce((a,x)=>a+x.paid,0),ex=e.reduce((a,x)=>a+x.amt,0);reportBox.innerHTML=`<h3>${data.biz} — Daily Report</h3><p>Date: ${today()}</p><p>Total sales: <b>${money(total)}</b></p><p>Collected: <b>${money(paid)}</b></p><p>Outstanding: <b>${money(total-paid)}</b></p><p>Expenses: <b>${money(ex)}</b></p><p>Net after expenses: <b>${money(paid-ex)}</b></p>`}
+function monthlyReport(){let ym=today().slice(0,7),s=data.sales.filter(x=>x.date.startsWith(ym)&&!x.voided),e=data.expenses.filter(x=>x.date.startsWith(ym)),t=s.reduce((a,x)=>a+x.total,0),p=s.reduce((a,x)=>a+x.paid,0),ex=e.reduce((a,x)=>a+x.amt,0);reportBox.innerHTML=`<h3>${data.biz} — Monthly Report</h3><p>Month: ${ym}</p><p>Total sales: <b>${money(t)}</b></p><p>Collected: <b>${money(p)}</b></p><p>Outstanding: <b>${money(t-p)}</b></p><p>Expenses: <b>${money(ex)}</b></p><p>Net after expenses: <b>${money(p-ex)}</b></p>`}
+function emailReport(){let body=`${data.biz} report%0A%0AUse the report screen to generate the latest figures.`;window.location.href='mailto:?subject='+encodeURIComponent(data.biz+' Business Report')+'&body='+body}
+let c='';function cp(v){c+=v;calc.value=c}function ce(){c='';calc.value=''}function eq(){try{c=String(Function('return '+c)());calc.value=c}catch{calc.value='Error';c=''}}
+document.getElementById('sDate').value=today();document.getElementById('eDate').value=today();render();
+$('sItem')?.addEventListener('input',e=>{const v=e.target.value.trim().toLowerCase();const match=data.stock.find(s=>String(s.item).trim().toLowerCase()===v);if(match)$('sPrice').value=Number(match.price)||0;updateItemSuggestions(e.target.value)});
+$('sItem')?.addEventListener('focus',()=>updateItemSuggestions($('sItem').value));
+$('sItem')?.addEventListener('blur',()=>setTimeout(closeItemSuggestions,150));
+document.addEventListener('click',e=>{if(!e.target.closest('.item-picker'))closeItemSuggestions()});
+</script>
+<script>
+function showById(id){
+  const nav=[...document.querySelectorAll('.nav')].find(x=>(x.textContent||'').toLowerCase().includes(id));
+  show(id,nav);
+
+  if(window.innerWidth<=760){
+    document.getElementById('sidebar')?.classList.remove('open');
+    document.getElementById('drawerBackdrop')?.classList.remove('open');
+  }
+}
+function toggleMenu(){
+  if(window.innerWidth<=760){
+    const sb=document.getElementById('sidebar'),bd=document.getElementById('drawerBackdrop');
+    if(sb)sb.classList.toggle('open');
+    if(bd)bd.classList.toggle('open');
+  }
+}
+function savePermissions(){
+  log('Permissions updated','Attendant permissions saved');
+  save();
+  alert('Permissions saved.');
+}
+</script>
+
+</body></html>
