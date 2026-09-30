@@ -46,7 +46,7 @@ th,td{padding:13px;border-bottom:1px solid #edf0f5;text-align:left;font-size:13p
 .quick-actions{display:flex;gap:10px;margin-top:18px}.quick-actions button{flex:1}
 .drawer-backdrop{display:none}
 .item-picker{position:relative}.item-suggestions{display:none;position:absolute;left:0;right:0;top:100%;z-index:60;background:#fff;border:1px solid #cbd5e1;border-radius:0 0 9px 9px;box-shadow:0 8px 20px #17203322;max-height:220px;overflow:auto}.item-suggestions.open{display:block}.item-suggestion{padding:12px 14px;cursor:pointer;border-bottom:1px solid #edf0f5;font-size:15px}.item-suggestion:last-child{border-bottom:0}.item-suggestion:hover,.item-suggestion:active{background:#eef5ff}.stock-empty{padding:14px;color:#64748b;font-size:13px}
-.voided-row{opacity:.72;background:#fff7f7}.voided-pill{background:#ffe1e1;color:#a11b1b}.void-btn{background:#fff1f1!important;color:#a11b1b!important;border:1px solid #f0b6b6!important}.void-note{font-size:11px;color:#a11b1b;margin-top:4px}
+.voided-row{opacity:.72;background:#fff7f7}.voided-pill{background:#ffe1e1;color:#a11b1b}.void-btn{background:#fff1f1!important;color:#a11b1b!important;border:1px solid #f0b6b6!important}.void-note{font-size:11px;color:#a11b1b;margin-top:4px}.ownerOnly.hiddenByRole{display:none!important}.due-reminder{background:#fff3cd;color:#8a5a00;padding:5px 8px;border-radius:14px;font-size:11px}.receipt-btn{background:#eef5ff!important;color:#1d4ed8!important;border:1px solid #bfd6ff!important}
 .mobile-bottom-nav,.ios-tabbar{display:none}
 @media(max-width:1100px){
  .grid{grid-template-columns:repeat(2,1fr)}.overview-row{grid-template-columns:repeat(2,1fr)}
@@ -217,10 +217,17 @@ button,.btn{min-height:42px}
 <div class="item-picker"><label>Item sold <small style="color:#6b7785">Start typing to select stock, or enter a new item.</small></label><input id="sItem" autocomplete="off" placeholder="Type to choose a stock item or enter a new item"><div id="itemSuggestions" class="item-suggestions"></div></div><div><label>Quantity</label><input id="sQty" type="number" min="1"></div>
 <div><label>Unit selling price</label><input id="sPrice" type="number" min="0"></div><div><label>Amount paid</label><input id="sPaid" type="number" min="0"></div>
 <div><label>Customer name (optional)</label><input id="sCustomer"></div><div><label>WhatsApp number (optional)</label><input id="sPhone" placeholder="2567..."></div>
-<div><label>Date</label><input id="sDate" type="date"></div><div><label>&nbsp;</label><button onclick="addSale()">Record sale</button></div>
+<div><label>Date</label><input id="sDate" type="date"></div><div><label>&nbsp;</label><button onclick="addSale()">Record sale</button></div><div style="grid-column:1/-1"><label><input id="sSendReceipt" type="checkbox" style="width:auto;min-height:auto;margin-right:6px"> Send WhatsApp receipt after recording (customer WhatsApp number required)</label></div>
 </div></div><p class="muted" style="margin:10px 2px 0">Sales are never permanently deleted. The Owner can void an incorrect sale; voiding keeps the record in the audit trail and restores linked stock.</p><br><div class="tablewrap"><table><thead><tr><th>Date</th><th>Item</th><th>Qty</th><th>Total</th><th>Paid</th><th>Balance</th><th>Status</th><th>Action</th></tr></thead><tbody id="salesBody"></tbody></table></div></section>
 
-<section id="debtors" class="section"><h2>Debtors</h2><div class="tablewrap"><table><thead><tr><th>Customer</th><th>Phone</th><th>Item</th><th>Balance</th><th>Date</th><th>Reminder</th></tr></thead><tbody id="debtBody"></tbody></table></div></section>
+<section id="debtors" class="section"><h2>Debtors</h2>
+<div class="card ownerOnly"><h3>Reminder settings</h3><p class="muted">The Owner controls how often debtor reminders become due.</p><div class="formgrid">
+<div><label><input id="reminderEnabled" type="checkbox" style="width:auto;min-height:auto;margin-right:6px"> Enable reminders</label></div>
+<div><label>Frequency</label><select id="reminderFrequency"><option value="daily">Daily</option><option value="3days">Every 3 days</option><option value="weekly">Weekly</option><option value="2weeks">Every 2 weeks</option><option value="monthly">Monthly</option></select></div>
+<div><label>Trigger time</label><input id="reminderTime" type="time" value="18:00"></div>
+<div><label>&nbsp;</label><button onclick="saveReminderSettings()">Save reminder settings</button></div>
+</div><p id="reminderSettingsMsg" class="small muted"></p></div>
+<div class="tablewrap"><table><thead><tr><th>Customer</th><th>Phone</th><th>Item</th><th>Balance</th><th>Date</th><th>Reminder</th><th>Receipt</th></tr></thead><tbody id="debtBody"></tbody></table></div></section>
 
 <section id="stock" class="section"><h2>Stock</h2>
 <div class="card"><div class="formgrid"><div><label>Item</label><input id="stItem"></div><div><label>Quantity</label><input id="stQty" type="number"></div><div><label>Selling price</label><input id="stPrice" type="number"></div><div><label>&nbsp;</label><button onclick="addStock()">Add stock</button></div></div></div><br>
@@ -230,11 +237,13 @@ button,.btn{min-height:42px}
 <div class="card"><div class="formgrid"><div><label>Category</label><input id="eCat" placeholder="Rent, transport..."></div><div class="wide"><label>Description</label><input id="eDesc"></div><div><label>Amount</label><input id="eAmt" type="number"></div><div><label>Date</label><input id="eDate" type="date"></div><div><label>&nbsp;</label><button onclick="addExpense()">Add expense</button></div></div></div><br>
 <div class="tablewrap"><table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Recorded by</th></tr></thead><tbody id="expBody"></tbody></table></div></section>
 
-<section id="reports" class="section"><h2>Reports</h2><div class="toolbar"><button onclick="dailyReport()">Generate today's report</button><button class="secondary" onclick="monthlyReport()">Generate monthly report</button><button class="secondary" onclick="emailReport()">Email report</button></div><div id="reportBox" class="card"><p class="muted">Choose a report.</p></div></section>
+<section id="reports" class="section"><h2>Reports</h2>
+<div class="card"><div class="formgrid"><div><label>Report month</label><input id="reportMonth" type="month"></div><div><label>&nbsp;</label><button onclick="monthlyReport()">Generate selected month</button></div><div><label>&nbsp;</label><button class="secondary" onclick="downloadMonthlyReport()">Download CSV</button></div><div><label>&nbsp;</label><button class="secondary" onclick="printReport()">Print / Save PDF</button></div></div></div>
+<div class="toolbar" style="margin-top:12px"><button onclick="dailyReport()">Generate today's report</button><button class="secondary" onclick="emailReport()">Email report</button></div><div id="reportBox" class="card"><p class="muted">Choose a report month.</p></div></section>
 
 <section id="audit" class="section"><h2>Audit Trail</h2><p class="muted">Read-only activity history. Owner only.</p><div class="tablewrap"><table><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></section>
 
-<section id="users" class="section"><h2>Users & Rights</h2><div class="card"><p>Owner controls what attendants can access.</p>
+<section id="users" class="section ownerOnly"><h2>Users & Rights</h2><div class="card"><p>Owner controls what attendants can access. Attendants cannot open or change this section.</p>
 <div class="formgrid">
 <label><input type="checkbox" checked> Record sales</label><label><input type="checkbox" checked> View stock</label><label><input type="checkbox"> Edit sales</label><label><input type="checkbox"> Void sales</label><label><input type="checkbox"> Add expenses</label><label><input type="checkbox"> View debtors</label><label><input type="checkbox"> Send receipts</label><label><input type="checkbox"> Send reminders</label>
 </div><br><button onclick="alert('Permissions saved in the production version.')">Save permissions</button></div></section>
@@ -253,7 +262,8 @@ const SUPABASE_URL='https://vqiqigfgctglzmagnwaw.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_Ci9zaNe5T5gaTKyQgVLZFA_okAHuGBV';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const K='biztrack_v1';
-let data=JSON.parse(localStorage.getItem(K)||'null')||{biz:'',role:'',sales:[],stock:[],expenses:[],audit:[]};
+let data=JSON.parse(localStorage.getItem(K)||'null')||{biz:'',role:'',sales:[],stock:[],expenses:[],audit:[],reminderSettings:{enabled:true,frequency:'weekly',time:'18:00'}};
+data.reminderSettings=data.reminderSettings||{enabled:true,frequency:'weekly',time:'18:00'};
 data.sales=Array.isArray(data.sales)?data.sales:[]; data.stock=Array.isArray(data.stock)?data.stock:[]; data.expenses=Array.isArray(data.expenses)?data.expenses:[]; data.audit=Array.isArray(data.audit)?data.audit:[];
 let today=()=>new Date().toISOString().slice(0,10), money=n=>'UGX '+Number(n||0).toLocaleString();
 function $(id){return document.getElementById(id)}
@@ -273,6 +283,7 @@ async function login(){
   data.role=(roleEl&&roleEl.value)||'Owner';
   data.authUserId=authData.user.id;
   data.authEmail=authData.user.email||email;
+  applyRoleAccess();
   log('Login','Signed in securely');
   localStorage.setItem(K,JSON.stringify(data));
   openApp();
@@ -298,14 +309,14 @@ async function sendReset(){
   if(error)return authMsg(error.message);
   authMsg('Password reset email sent. Check your inbox and follow the link.',false);
 }
-function openApp(){ $('login').classList.add('hidden');$('app').classList.remove('hidden');render();show('dashboard',document.querySelector('.nav')); }
+function openApp(){ $('login').classList.add('hidden');$('app').classList.remove('hidden');applyRoleAccess();render();show('dashboard',document.querySelector('.nav')); }
 async function logout(){await supabaseClient.auth.signOut();$('app').classList.add('hidden');$('login').classList.remove('hidden');showAuthMode('login');}
 supabaseClient.auth.onAuthStateChange((event,session)=>{
   if(event==='PASSWORD_RECOVERY'){showAuthMode('login');setTimeout(()=>changePassword(),100);}
 });
 async function restoreSession(){
   const {data:sessionData}=await supabaseClient.auth.getSession();
-  if(sessionData.session){data.authUserId=sessionData.session.user.id;data.authEmail=sessionData.session.user.email||'';openApp();}
+  if(sessionData.session){data.authUserId=sessionData.session.user.id;data.authEmail=sessionData.session.user.email||'';applyRoleAccess();openApp();}
   else{$('app').classList.add('hidden');$('login').classList.remove('hidden');showAuthMode('login');}
 }
 async function changePassword(){
@@ -315,13 +326,53 @@ async function changePassword(){
   const {error}=await supabaseClient.auth.updateUser({password});
   alert(error?error.message:'Password changed successfully.'); 
 }
-function show(id,el){document.querySelectorAll('.section').forEach(x=>x.classList.remove('show'));const section=$(id);if(section)section.classList.add('show');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');const sidebar=document.querySelector('nav'),backdrop=$('drawerBackdrop');if(sidebar)sidebar.classList.remove('open');if(backdrop)backdrop.classList.remove('open');document.body.classList.remove('menu-open');if(id==='sales')updateItemSuggestions($('sItem')?.value||'')}
+function isOwner(){return String(data.role||'').toLowerCase()==='owner'}
+function applyRoleAccess(){
+  document.querySelectorAll('.ownerOnly').forEach(el=>el.classList.toggle('hiddenByRole',!isOwner()));
+  if(!isOwner() && document.getElementById('users')?.classList.contains('show')) show('dashboard',document.querySelector('.nav'));
+  if(document.getElementById('reminderEnabled')) document.getElementById('reminderEnabled').checked=!!data.reminderSettings.enabled;
+  if(document.getElementById('reminderFrequency')) document.getElementById('reminderFrequency').value=data.reminderSettings.frequency||'weekly';
+  if(document.getElementById('reminderTime')) document.getElementById('reminderTime').value=data.reminderSettings.time||'18:00';
+}
+function saveReminderSettings(){
+  if(!isOwner()) return alert('Only the Owner can change debtor reminder settings.');
+  data.reminderSettings={enabled:!!$('reminderEnabled').checked,frequency:$('reminderFrequency').value,time:$('reminderTime').value||'18:00'};
+  log('Reminder settings updated',`${data.reminderSettings.frequency} at ${data.reminderSettings.time}`);save();$('reminderSettingsMsg').textContent='Reminder settings saved.';
+}
+function reminderDays(f){return ({daily:1,'3days':3,weekly:7,'2weeks':14,monthly:30}[f]||7)}
+function reminderDue(sale){
+  if(!data.reminderSettings.enabled || !sale.phone || Number(sale.total)<=Number(sale.paid)) return false;
+  const days=reminderDays(data.reminderSettings.frequency), time=data.reminderSettings.time||'18:00', now=new Date();
+  const base=sale.lastReminderAt?new Date(sale.lastReminderAt):new Date((sale.date||today())+'T'+time);
+  if(Number.isNaN(base.getTime())) return false;
+  const next=new Date(base.getTime()+days*86400000);
+  next.setHours(Number(time.slice(0,2)),Number(time.slice(3,5)),0,0);
+  return now>=next;
+}
+function waNumber(phone){let p=String(phone||'').replace(/[^0-9+]/g,'');if(p.startsWith('+'))p=p.slice(1);if(p.startsWith('0'))p='256'+p.slice(1);return p}
+function sendWhatsApp(url){window.open(url,'_blank','noopener,noreferrer')}
+function reminderMessage(sale){const balance=Number(sale.total)-Number(sale.paid);return `Hello ${sale.customer||''}, this is a friendly reminder from ${data.biz||'our business'} that your outstanding balance is ${money(balance)} for ${sale.item}. Thank you.`}
+function sendReminder(id){
+  const sale=data.sales.find(x=>x.id===id);if(!sale)return;
+  if(!sale.phone)return alert('This debtor has no WhatsApp number recorded.');
+  const n=waNumber(sale.phone);if(!n)return alert('The WhatsApp number is not valid.');
+  sale.lastReminderAt=new Date().toISOString();log('Debtor reminder sent',`${sale.customer||'Customer'} — ${money(Number(sale.total)-Number(sale.paid))}`);save();
+  sendWhatsApp(`https://wa.me/${n}?text=${encodeURIComponent(reminderMessage(sale))}`);
+}
+function receiptMessage(sale){const balance=Math.max(0,Number(sale.total)-Number(sale.paid));return `*${data.biz||'BizTracker'}*%0AReceipt%0ADate: ${sale.date}%0AItem: ${sale.item}%0AQuantity: ${sale.qty}%0AUnit price: ${money(sale.price)}%0ATotal: ${money(sale.total)}%0APaid: ${money(sale.paid)}%0ABalance: ${money(balance)}%0AStatus: ${status(sale.total,sale.paid)}`.replace(/%0A/g,'\n')}
+function sendReceipt(id){
+  const sale=data.sales.find(x=>x.id===id);if(!sale)return;if(!sale.phone)return alert('This sale has no WhatsApp number recorded.');const n=waNumber(sale.phone);if(!n)return alert('The WhatsApp number is not valid.');log('Receipt sent',`${sale.customer||'Customer'} — ${sale.item}`);save();sendWhatsApp(`https://wa.me/${n}?text=${encodeURIComponent(receiptMessage(sale))}`);
+}
+function printReceipt(id){
+  const sale=data.sales.find(x=>x.id===id);if(!sale)return;const balance=Math.max(0,Number(sale.total)-Number(sale.paid));const w=window.open('','_blank');if(!w)return alert('Please allow pop-ups to print the receipt.');w.document.write(`<html><head><title>BizTracker Receipt</title><style>body{font-family:Arial;padding:24px;max-width:420px;margin:auto}h2{margin-bottom:4px}p{margin:6px 0}</style></head><body><h2>${escapeHtml(data.biz||'BizTracker')}</h2><p>Receipt</p><hr><p>Date: ${escapeHtml(sale.date)}</p><p>Customer: ${escapeHtml(sale.customer||'Customer')}</p><p>Item: ${escapeHtml(sale.item)}</p><p>Quantity: ${sale.qty}</p><p>Unit price: ${money(sale.price)}</p><p>Total: ${money(sale.total)}</p><p>Paid: ${money(sale.paid)}</p><p>Balance: ${money(balance)}</p><p>Status: ${status(sale.total,sale.paid)}</p><hr><p>Thank you for your business.</p><script>window.print();<\/script></body></html>`);w.document.close();}
+
+function show(id,el){if((id==='users'||id==='audit')&&!isOwner()){alert('Only the Owner can access this section.');return;}document.querySelectorAll('.section').forEach(x=>x.classList.remove('show'));const section=$(id);if(section)section.classList.add('show');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');const sidebar=document.querySelector('nav'),backdrop=$('drawerBackdrop');if(sidebar)sidebar.classList.remove('open');if(backdrop)backdrop.classList.remove('open');document.body.classList.remove('menu-open');if(id==='sales')updateItemSuggestions($('sItem')?.value||'')}
 function status(total,paid){return paid>=total?'Fully paid':paid>0?'Partially paid':'Unpaid'}
 function addStock(){const item=$('stItem').value.trim(),qty=Number($('stQty').value),price=Number($('stPrice').value);if(!item||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0)return alert('Enter item, quantity and selling price.');let existing=data.stock.find(s=>String(s.item).trim().toLowerCase()===item.toLowerCase());if(existing){const old=Number(existing.qty)||0;existing.qty=old+qty;existing.price=price;log('Stock added',`${existing.item}: ${old} → ${existing.qty} (+${qty})`)}else{data.stock.push({id:Date.now(),item,qty,startQty:qty,price});log('Stock added',`${item}: ${qty} units at ${money(price)}`)}$('stItem').value='';$('stQty').value='';$('stPrice').value='';save();alert('Stock added successfully.')}
 function selectStockItem(item){$('sItem').value=item.item;$('sPrice').value=Number(item.price)||0;closeItemSuggestions();$('sQty').focus()}
 function closeItemSuggestions(){const box=$('itemSuggestions');if(box)box.classList.remove('open')}
 function updateItemSuggestions(query){const box=$('itemSuggestions');if(!box)return;const q=String(query||'').trim().toLowerCase();const matches=data.stock.filter(s=>String(s.item).toLowerCase().includes(q));box.innerHTML='';if(!matches.length){closeItemSuggestions();return}matches.forEach(item=>{const row=document.createElement('div');row.className='item-suggestion';row.textContent=`${item.item} — ${item.qty} in stock — ${money(item.price)}`;row.addEventListener('mousedown',e=>{e.preventDefault();selectStockItem(item)});box.appendChild(row)});box.classList.add('open')}
-function addSale(){const item=$('sItem').value.trim(),qty=Number($('sQty').value),price=Number($('sPrice').value),paid=Number($('sPaid').value)||0;if(!item||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0)return alert('Enter item, quantity and price.');const stockItem=data.stock.find(s=>String(s.item).trim().toLowerCase()===item.toLowerCase());if(stockItem){const availlable=Number(stockItem.qty)||0;if(qty>availlable)return alert(`Insufficient stock for ${stockItem.item}. Available: ${availlable}.`);stockItem.qty=availlable-qty;log('Stock reduced by sale',`${stockItem.item}: ${availlable} → ${stockItem.qty} (${qty} sold)`)}const total=qty*price;const actualPaid=Math.min(Math.max(paid,0),total);data.sales.unshift({id:Date.now(),date:$('sDate').value||today(),item,qty,price,total,paid:actualPaid,customer:$('sCustomer').value.trim(),phone:$('sPhone').value.trim()});log('Sale recorded',`${item}, qty ${qty}, total ${money(total)}, paid ${money(actualPaid)}`);['sItem','sQty','sPrice','sPaid','sCustomer','sPhone'].forEach(id=>$(id).value='');$('sDate').value=today();closeItemSuggestions();save();alert(stockItem?`Sale recorded. ${stockItem.item} stock is now ${stockItem.qty}.`:'Sale recorded.')}
+function addSale(){const item=$('sItem').value.trim(),qty=Number($('sQty').value),price=Number($('sPrice').value),paid=Number($('sPaid').value)||0;if(!item||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0)return alert('Enter item, quantity and price.');const stockItem=data.stock.find(s=>String(s.item).trim().toLowerCase()===item.toLowerCase());if(stockItem){const availlable=Number(stockItem.qty)||0;if(qty>availlable)return alert(`Insufficient stock for ${stockItem.item}. Available: ${availlable}.`);stockItem.qty=availlable-qty;log('Stock reduced by sale',`${stockItem.item}: ${availlable} → ${stockItem.qty} (${qty} sold)`)}const total=qty*price;const actualPaid=Math.min(Math.max(paid,0),total);const newSale={id:Date.now(),date:$('sDate').value||today(),item,qty,price,total,paid:actualPaid,customer:$('sCustomer').value.trim(),phone:$('sPhone').value.trim()};data.sales.unshift(newSale);const sendReceiptNow=!!$('sSendReceipt')?.checked;log('Sale recorded',`${item}, qty ${qty}, total ${money(total)}, paid ${money(actualPaid)}`);['sItem','sQty','sPrice','sPaid','sCustomer','sPhone'].forEach(id=>$(id).value='');$('sSendReceipt').checked=false;$('sDate').value=today();closeItemSuggestions();save();alert(stockItem?`Sale recorded. ${stockItem.item} stock is now ${stockItem.qty}.`:'Sale recorded.');if(sendReceiptNow){if(newSale.phone)sendReceipt(newSale.id);else alert('Sale recorded, but no WhatsApp receipt was sent because no WhatsApp number was entered.');}}
 function voidSale(id){
   if((data.role||'').toLowerCase()!=='owner')return alert('Only the Owner can void a sale.');
   const i=data.sales.findIndex(x=>x.id===id);if(i<0)return;
@@ -353,18 +404,24 @@ function deleteStock(id){if(!confirm('Delete this stock item?'))return;const i=d
 function addExpense(){const cat=$('eCat').value.trim(),desc=$('eDesc').value.trim(),amt=Number($('eAmt').value),date=$('eDate').value||today();if(!cat||!Number.isFinite(amt)||amt<0)return alert('Enter expense category and amount.');data.expenses.unshift({id:Date.now(),cat,desc,amt,date,user:data.role});log('Expense added',`${cat}: ${money(amt)}`);['eCat','eDesc','eAmt'].forEach(id=>$(id).value='');$('eDate').value=today();save()}
 function render(){if($('shopHeader'))$('shopHeader').textContent=data.biz||'My Business';if($('userLabel'))$('userLabel').textContent=data.role||'Owner';if($('headerDate'))$('headerDate').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});const t=today(),salesToday=data.sales.filter(x=>x.date===t&&!x.voided),expToday=data.expenses.filter(x=>x.date===t);const total=salesToday.reduce((a,x)=>a+Number(x.total||0),0),paid=salesToday.reduce((a,x)=>a+Number(x.paid||0),0),exp=expToday.reduce((a,x)=>a+Number(x.amt||0),0);if($('mSales'))$('mSales').textContent=money(total);if($('mPaid'))$('mPaid').textContent=money(paid);if($('mDebt'))$('mDebt').textContent=money(total-paid);if($('mExp'))$('mExp').textContent=money(exp);if($('stockAlertCount'))$('stockAlertCount').textContent=data.stock.filter(s=>Number(s.qty)<=Math.max(1,Number(s.startQty||s.qty)*0.5)).length;if($('transactionCount'))$('transactionCount').textContent=salesToday.length;if($('netToday'))$('netToday').textContent=money(paid-exp);const customers=new Set(salesToday.filter(x=>Number(x.total||0)>Number(x.paid||0)&&x.customer).map(x=>x.customer.trim().toLowerCase()));if($('customerDebtCount'))$('customerDebtCount').textContent=customers.size;
 const stockBody=$('stockBody');if(stockBody){stockBody.innerHTML='';data.stock.forEach(s=>{const tr=document.createElement('tr'),alertAt=(Number(s.startQty||s.qty)||0)*0.5;tr.innerHTML=`<td>${escapeHtml(s.item)}</td><td>${Number(s.qty)||0}</td><td>${money(s.price)}</td><td>${Number(s.qty)<=alertAt?'⚠ Low':'OK'}</td><td><button class="secondary" onclick="deleteStock(${s.id})">Delete</button></td>`;stockBody.appendChild(tr)})}
-const salesBody=$('salesBody');if(salesBody){salesBody.innerHTML='';data.sales.forEach(x=>{const bal=Number(x.total||0)-Number(x.paid||0),tr=document.createElement('tr');if(x.voided)tr.className='voided-row';const statusHtml=x.voided?`<span class="pill voided-pill">Voided</span><div class="void-note">${escapeHtml(x.voidReason||'No reason recorded')}</div>`:`<span class="pill ${bal<=0?'paid':x.paid>0?'partial':'unpaid'}">${status(x.total,x.paid)}</span>`;const actionHtml=x.voided?`<span class="muted">Voided ${escapeHtml(x.voidedAt||'')}</span>`:`<button class="void-btn" onclick="voidSale(${x.id})">Void sale</button>`;tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.item)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td>${money(x.paid)}</td><td>${money(bal)}</td><td>${statusHtml}</td><td>${actionHtml}</td>`;salesBody.appendChild(tr)})}
+const salesBody=$('salesBody');if(salesBody){salesBody.innerHTML='';data.sales.forEach(x=>{const bal=Number(x.total||0)-Number(x.paid||0),tr=document.createElement('tr');if(x.voided)tr.className='voided-row';const statusHtml=x.voided?`<span class="pill voided-pill">Voided</span><div class="void-note">${escapeHtml(x.voidReason||'No reason recorded')}</div>`:`<span class="pill ${bal<=0?'paid':x.paid>0?'partial':'unpaid'}">${status(x.total,x.paid)}</span>`;const actionHtml=x.voided?`<span class="muted">Voided ${escapeHtml(x.voidedAt||'')}</span>`:`<button class="receipt-btn" onclick="sendReceipt(${x.id})">Receipt</button> <button class="secondary" onclick="printReceipt(${x.id})">Print</button> <button class="void-btn" onclick="voidSale(${x.id})">Void sale</button>`;tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.item)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td>${money(x.paid)}</td><td>${money(bal)}</td><td>${statusHtml}</td><td>${actionHtml}</td>`;salesBody.appendChild(tr)})}
 const recent=$('recentSalesBody');if(recent){recent.innerHTML='';data.sales.slice(0,8).forEach(x=>{const tr=document.createElement('tr');const st=x.voided?`<span class="pill voided-pill">Voided</span>`:`<span class="pill ${Number(x.paid)>=Number(x.total)?'paid':Number(x.paid)>0?'partial':'unpaid'}">${status(x.total,x.paid)}</span>`;tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.item)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td>${st}</td><td>${escapeHtml(x.customer||'—')}</td><td>—</td>`;recent.appendChild(tr)})}
-const debtBody=$('debtBody');if(debtBody){debtBody.innerHTML='';data.sales.filter(x=>!x.voided&&Number(x.total)>Number(x.paid)&&x.customer).forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.customer)}</td><td>${escapeHtml(x.phone||'')}</td><td>${escapeHtml(x.item)}</td><td>${money(Number(x.total)-Number(x.paid))}</td><td>${escapeHtml(x.date)}</td><td>—</td>`;debtBody.appendChild(tr)})}
+const debtBody=$('debtBody');if(debtBody){debtBody.innerHTML='';data.sales.filter(x=>!x.voided&&Number(x.total)>Number(x.paid)&&x.customer).forEach(x=>{const tr=document.createElement('tr');const due=reminderDue(x);const last=x.lastReminderAt?`Last sent ${new Date(x.lastReminderAt).toLocaleDateString()}`:'Not sent';tr.innerHTML=`<td>${escapeHtml(x.customer)}</td><td>${escapeHtml(x.phone||'')}</td><td>${escapeHtml(x.item)}</td><td>${money(Number(x.total)-Number(x.paid))}</td><td>${escapeHtml(x.date)}</td><td>${due?'<span class="due-reminder">Due</span>':'<span class="muted">'+last+'</span>'}<br><button class="secondary" onclick="sendReminder(${x.id})">Send reminder</button></td><td><button class="receipt-btn" onclick="sendReceipt(${x.id})">WhatsApp receipt</button></td>`;debtBody.appendChild(tr)})}
 const expBody=$('expBody');if(expBody){expBody.innerHTML='';data.expenses.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.cat)}</td><td>${escapeHtml(x.desc||'')}</td><td>${money(x.amt)}</td><td>${escapeHtml(x.user||'')}</td>`;expBody.appendChild(tr)})}
 const auditBody=$('auditBody');if(auditBody){auditBody.innerHTML='';data.audit.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.time)}</td><td>${escapeHtml(x.user||'')}</td><td>${escapeHtml(x.role||'')}</td><td>${escapeHtml(x.action||'')}</td><td>${escapeHtml(x.details||'')}</td>`;auditBody.appendChild(tr)})}updateItemSuggestions($('sItem')?.value||'')}
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
 function dailyReport(){let s=data.sales.filter(x=>x.date===today()&&!x.voided),e=data.expenses.filter(x=>x.date===today()),total=s.reduce((a,x)=>a+x.total,0),paid=s.reduce((a,x)=>a+x.paid,0),ex=e.reduce((a,x)=>a+x.amt,0);reportBox.innerHTML=`<h3>${data.biz} — Daily Report</h3><p>Date: ${today()}</p><p>Total sales: <b>${money(total)}</b></p><p>Collected: <b>${money(paid)}</b></p><p>Outstanding: <b>${money(total-paid)}</b></p><p>Expenses: <b>${money(ex)}</b></p><p>Net after expenses: <b>${money(paid-ex)}</b></p>`}
-function monthlyReport(){let ym=today().slice(0,7),s=data.sales.filter(x=>x.date.startsWith(ym)&&!x.voided),e=data.expenses.filter(x=>x.date.startsWith(ym)),t=s.reduce((a,x)=>a+x.total,0),p=s.reduce((a,x)=>a+x.paid,0),ex=e.reduce((a,x)=>a+x.amt,0);reportBox.innerHTML=`<h3>${data.biz} — Monthly Report</h3><p>Month: ${ym}</p><p>Total sales: <b>${money(t)}</b></p><p>Collected: <b>${money(p)}</b></p><p>Outstanding: <b>${money(t-p)}</b></p><p>Expenses: <b>${money(ex)}</b></p><p>Net after expenses: <b>${money(p-ex)}</b></p>`}
+function monthlyReport(){const ym=$('reportMonth').value||today().slice(0,7);let s=data.sales.filter(x=>String(x.date||'').startsWith(ym)&&!x.voided),e=data.expenses.filter(x=>String(x.date||'').startsWith(ym)),t=s.reduce((a,x)=>a+Number(x.total||0),0),p=s.reduce((a,x)=>a+Number(x.paid||0),0),ex=e.reduce((a,x)=>a+Number(x.amt||0),0);const label=new Date(ym+'-01T00:00:00').toLocaleDateString(undefined,{month:'long',year:'numeric'});reportBox.innerHTML=`<h3>${data.biz} — Monthly Report</h3><p>Month: ${label}</p><p>Total sales: <b>${money(t)}</b></p><p>Collected: <b>${money(p)}</b></p><p>Outstanding: <b>${money(t-p)}</b></p><p>Expenses: <b>${money(ex)}</b></p><p>Net after expenses: <b>${money(p-ex)}</b></p><p>Transactions: <b>${s.length}</b></p>`}
+function downloadMonthlyReport(){
+  const ym=$('reportMonth').value||today().slice(0,7);let s=data.sales.filter(x=>String(x.date||'').startsWith(ym)&&!x.voided),e=data.expenses.filter(x=>String(x.date||'').startsWith(ym));
+  const rows=[['Date','Type','Item/Category','Customer','Total','Paid','Balance'],...s.map(x=>[x.date,'Sale',x.item,x.customer||'',x.total,x.paid,Number(x.total)-Number(x.paid)]),...e.map(x=>[x.date,'Expense',x.cat,x.desc||'',x.amt,'',''])];
+  const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`BizTracker_${ym}_report.csv`;a.click();URL.revokeObjectURL(a.href);
+}
+function printReport(){window.print()}
 function emailReport(){let body=`${data.biz} report%0A%0AUse the report screen to generate the latest figures.`;window.location.href='mailto:?subject='+encodeURIComponent(data.biz+' Business Report')+'&body='+body}
 let c='';function cp(v){c+=v;calc.value=c}function ce(){c='';calc.value=''}function eq(){try{c=String(Function('return '+c)());calc.value=c}catch{calc.value='Error';c=''}}
-document.getElementById('sDate').value=today();document.getElementById('eDate').value=today();render();restoreSession();
+document.getElementById('sDate').value=today();document.getElementById('eDate').value=today();if(document.getElementById('reportMonth'))document.getElementById('reportMonth').value=today().slice(0,7);render();applyRoleAccess();restoreSession();
 $('sItem')?.addEventListener('input',e=>{const v=e.target.value.trim().toLowerCase();const match=data.stock.find(s=>String(s.item).trim().toLowerCase()===v);if(match)$('sPrice').value=Number(match.price)||0;updateItemSuggestions(e.target.value)});
 $('sItem')?.addEventListener('focus',()=>updateItemSuggestions($('sItem').value));
 $('sItem')?.addEventListener('blur',()=>setTimeout(closeItemSuggestions,150));
