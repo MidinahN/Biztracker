@@ -127,7 +127,6 @@ button,.btn{min-height:42px}
 <label>Email address</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com">
 <label style="margin-top:10px">Password</label><input id="authPassword" type="password" autocomplete="current-password" placeholder="Enter your password">
 <label style="margin-top:10px">Business name</label><input id="biz" placeholder="ABC Shop">
-<label style="margin-top:10px">Login as</label><select id="role"><option>Owner</option><option>Attendant</option></select>
 <button type="button" id="loginBtn" onclick="login()">Log in securely</button>
 <button type="button" class="secondary" onclick="showAuthMode('signup')">Create account</button>
 <button type="button" class="secondary" onclick="showAuthMode('forgot')">Forgot password?</button>
@@ -145,7 +144,7 @@ button,.btn{min-height:42px}
 <button type="button" onclick="sendReset()">Send reset email</button>
 <button type="button" class="secondary" onclick="showAuthMode('login')">Back to login</button>
 </div>
-<p class="small muted">Your login is handled by Supabase Authentication. BizTracker will restore the session when you refresh.</p>
+<p class="small muted">Your login is handled by Supabase Authentication. Your Owner or Attendant role is read from your secure BizTracker profile. Your session is restored when you refresh.</p>
 </div>
 
 <div id="app" class="hidden">
@@ -241,12 +240,23 @@ button,.btn{min-height:42px}
 <div class="card"><div class="formgrid"><div><label>Report month</label><input id="reportMonth" type="month"></div><div><label>&nbsp;</label><button onclick="monthlyReport()">Generate selected month</button></div><div><label>&nbsp;</label><button class="secondary" onclick="downloadMonthlyReport()">Download CSV</button></div><div><label>&nbsp;</label><button class="secondary" onclick="printReport()">Print / Save PDF</button></div></div></div>
 <div class="toolbar" style="margin-top:12px"><button onclick="dailyReport()">Generate today's report</button><button class="secondary" onclick="emailReport()">Email report</button></div><div id="reportBox" class="card"><p class="muted">Choose a report month.</p></div></section>
 
-<section id="audit" class="section"><h2>Audit Trail</h2><p class="muted">Read-only activity history. Owner only.</p><div class="tablewrap"><table><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></section>
+<section id="audit" class="section ownerOnly"><h2>Audit Trail</h2><p class="muted">Read-only activity history. Owner only.</p><div class="tablewrap"><table><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></section>
 
-<section id="users" class="section ownerOnly"><h2>Users & Rights</h2><div class="card"><p>Owner controls what attendants can access. Attendants cannot open or change this section.</p>
+<section id="users" class="section ownerOnly"><h2>Users & Rights</h2>
+<div class="card">
+<h3>Attendant account</h3>
+<p class="muted">Create a separate login for each attendant. Only the Owner can create an attendant account.</p>
+<div class="formgrid">
+<div><label>Attendant email</label><input id="attendantEmail" type="email" autocomplete="off" placeholder="attendant@example.com"></div>
+<div><label>Temporary password</label><input id="attendantPassword" type="password" autocomplete="new-password" placeholder="Minimum 6 characters"></div>
+<div><label>&nbsp;</label><button onclick="createAttendant()">Create Attendant</button></div>
+</div>
+<p id="attendantMsg" class="small muted" style="margin-top:10px"></p>
+</div>
+<div class="card" style="margin-top:18px"><p>Owner controls what attendants can access. Attendants cannot open or change this section.</p>
 <div class="formgrid">
 <label><input type="checkbox" checked> Record sales</label><label><input type="checkbox" checked> View stock</label><label><input type="checkbox"> Edit sales</label><label><input type="checkbox"> Void sales</label><label><input type="checkbox"> Add expenses</label><label><input type="checkbox"> View debtors</label><label><input type="checkbox"> Send receipts</label><label><input type="checkbox"> Send reminders</label>
-</div><br><button onclick="alert('Permissions saved in the production version.')">Save permissions</button></div></section>
+</div><br><button onclick="savePermissions()">Save permissions</button></div></section>
 
 <section id="calculator" class="section"><h2>Calculator</h2><div class="card" style="max-width:420px"><input id="calc" readonly style="font-size:22px;text-align:right"><div class="formgrid" style="grid-template-columns:repeat(4,1fr);margin-top:10px">
 <button onclick="cp('7')">7</button><button onclick="cp('8')">8</button><button onclick="cp('9')">9</button><button onclick="cp('/')">÷</button>
@@ -262,6 +272,8 @@ const SUPABASE_URL='https://vqiqigfgctglzmagnwaw.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_Ci9zaNe5T5gaTKyQgVLZFA_okAHuGBV';
 const supabaseClient = window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const K='biztrack_v1';
+// IMPORTANT: Owner/Attendant access is read from the Supabase profiles table.
+// Do not trust a role selected or stored only in the browser.
 let data=JSON.parse(localStorage.getItem(K)||'null')||{biz:'',role:'',sales:[],stock:[],expenses:[],audit:[],reminderSettings:{enabled:true,frequency:'weekly',time:'18:00'}};
 data.reminderSettings=data.reminderSettings||{enabled:true,frequency:'weekly',time:'18:00'};
 data.sales=Array.isArray(data.sales)?data.sales:[]; data.stock=Array.isArray(data.stock)?data.stock:[]; data.expenses=Array.isArray(data.expenses)?data.expenses:[]; data.audit=Array.isArray(data.audit)?data.audit:[];
@@ -276,15 +288,43 @@ async function login(){
   clearAuthMsg();
   const email=$('authEmail').value.trim(), password=$('authPassword').value;
   if(!email||!password)return authMsg('Enter your email address and password.');
+
+  // Clear any old browser role before starting a new login.
+  data.authUserId=''; data.authEmail=''; data.role=''; data.biz='';
+  localStorage.setItem(K,JSON.stringify(data));
+
   const {data:authData,error}=await supabaseClient.auth.signInWithPassword({email,password});
   if(error)return authMsg(error.message);
-  const bizEl=$('biz'),roleEl=$('role');
-  data.biz=(bizEl&&bizEl.value.trim())||'My Business';
-  data.role=(roleEl&&roleEl.value)||'Owner';
-  data.authUserId=authData.user.id;
-  data.authEmail=authData.user.email||email;
+
+  const user=authData.user;
+  const {data:profile,error:profileError}=await supabaseClient
+    .from('profiles')
+    .select('business_name,role,status,business_id')
+    .eq('id',user.id)
+    .single();
+
+  if(profileError || !profile){
+    await supabaseClient.auth.signOut();
+    return authMsg('Your BizTracker profile could not be found. Please contact the Owner.');
+  }
+
+  const profileRole=String(profile.role||'').trim().toLowerCase();
+  if(profileRole!=='owner' && profileRole!=='attendant'){
+    await supabaseClient.auth.signOut();
+    return authMsg('Your BizTracker role could not be verified. Please contact the Owner.');
+  }
+  if(String(profile.status||'Active').toLowerCase()==='inactive'){
+    await supabaseClient.auth.signOut();
+    return authMsg('This BizTracker account is inactive. Please contact the Owner.');
+  }
+
+  data.biz=profile.business_name||'My Business';
+  data.role=profileRole==='attendant'?'Attendant':'Owner';
+  data.authUserId=user.id;
+  data.authEmail=user.email||email;
+  localStorage.setItem(K,JSON.stringify(data));
   applyRoleAccess();
-  log('Login','Signed in securely');
+  log('Login','Signed in securely as '+data.role);
   localStorage.setItem(K,JSON.stringify(data));
   openApp();
 }
@@ -296,9 +336,32 @@ async function signUp(){
   if(password.length<8)return authMsg('Password must be at least 8 characters.');
   const {data:authData,error}=await supabaseClient.auth.signUp({email,password,data:{business_name:biz,role:'Owner'}});
   if(error)return authMsg(error.message);
-  data.biz=biz;data.role='Owner';data.authUserId=authData.user?.id||'';data.authEmail=email;
+
+  data.biz=biz;
+  data.role='Owner';
+  data.authUserId=authData.user?.id||'';
+  data.authEmail=email;
   localStorage.setItem(K,JSON.stringify(data));
-  if(authData.session){openApp();}else{authMsg('Account created. Check your email and confirm your address before logging in.',false);showAuthMode('login');}
+
+  if(authData.session){
+    const {data:profile,error:profileError}=await supabaseClient
+      .from('profiles')
+      .select('business_name,role')
+      .eq('id',authData.user.id)
+      .single();
+
+    if(profileError || !profile){
+      await supabaseClient.auth.signOut();
+      return authMsg('Account created, but the BizTracker profile was not created yet. Please confirm your email, then try logging in again.');
+    }
+    data.biz=profile.business_name||biz;
+    data.role=profile.role==='Attendant'?'Attendant':'Owner';
+    localStorage.setItem(K,JSON.stringify(data));
+    openApp();
+  }else{
+    authMsg('Account created. Check your email and confirm your address before logging in.',false);
+    showAuthMode('login');
+  }
 }
 async function sendReset(){
   clearAuthMsg();
@@ -316,8 +379,44 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
 });
 async function restoreSession(){
   const {data:sessionData}=await supabaseClient.auth.getSession();
-  if(sessionData.session){data.authUserId=sessionData.session.user.id;data.authEmail=sessionData.session.user.email||'';applyRoleAccess();openApp();}
-  else{$('app').classList.add('hidden');$('login').classList.remove('hidden');showAuthMode('login');}
+  if(!sessionData.session){
+    data.authUserId=''; data.authEmail=''; data.role='';
+    localStorage.setItem(K,JSON.stringify(data));
+    $('app').classList.add('hidden');
+    $('login').classList.remove('hidden');
+    showAuthMode('login');
+    return;
+  }
+
+  const user=sessionData.session.user;
+  const {data:profile,error}=await supabaseClient
+    .from('profiles')
+    .select('business_name,role,status,business_id')
+    .eq('id',user.id)
+    .single();
+
+  if(error || !profile){
+    await supabaseClient.auth.signOut();
+    $('app').classList.add('hidden');
+    $('login').classList.remove('hidden');
+    return authMsg('Your BizTracker profile could not be loaded. Please contact the Owner.');
+  }
+
+  const profileRole=String(profile.role||'').trim().toLowerCase();
+  if(profileRole!=='owner' && profileRole!=='attendant' || String(profile.status||'Active').toLowerCase()==='inactive'){
+    await supabaseClient.auth.signOut();
+    $('app').classList.add('hidden');
+    $('login').classList.remove('hidden');
+    return authMsg('This BizTracker account is not active or its role could not be verified.');
+  }
+
+  data.authUserId=user.id;
+  data.authEmail=user.email||'';
+  data.biz=profile.business_name||'My Business';
+  data.role=profileRole==='attendant'?'Attendant':'Owner';
+  localStorage.setItem(K,JSON.stringify(data));
+  applyRoleAccess();
+  openApp();
 }
 async function changePassword(){
   const password=prompt('Enter your new BizTracker password (minimum 8 characters):');
@@ -326,7 +425,7 @@ async function changePassword(){
   const {error}=await supabaseClient.auth.updateUser({password});
   alert(error?error.message:'Password changed successfully.'); 
 }
-function isOwner(){return String(data.role||'').toLowerCase()==='owner'}
+function isOwner(){return String(data.role||'').trim().toLowerCase()==='owner'}
 function applyRoleAccess(){
   document.querySelectorAll('.ownerOnly').forEach(el=>el.classList.toggle('hiddenByRole',!isOwner()));
   if(!isOwner() && document.getElementById('users')?.classList.contains('show')) show('dashboard',document.querySelector('.nav'));
@@ -425,7 +524,8 @@ const salesBody=$('salesBody');if(salesBody){salesBody.innerHTML='';data.sales.f
 const recent=$('recentSalesBody');if(recent){recent.innerHTML='';data.sales.slice(0,8).forEach(x=>{const tr=document.createElement('tr');const st=x.voided?`<span class="pill voided-pill">Voided</span>`:`<span class="pill ${Number(x.paid)>=Number(x.total)?'paid':Number(x.paid)>0?'partial':'unpaid'}">${status(x.total,x.paid)}</span>`;tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.item)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td>${st}</td><td>${escapeHtml(x.customer||'—')}</td><td>—</td>`;recent.appendChild(tr)})}
 const debtBody=$('debtBody');if(debtBody){debtBody.innerHTML='';data.sales.filter(x=>!x.voided&&Number(x.total)>Number(x.paid)&&x.customer).forEach(x=>{const tr=document.createElement('tr');const due=reminderDue(x);const last=x.lastReminderAt?`Last sent ${new Date(x.lastReminderAt).toLocaleDateString()}`:'Not sent';tr.innerHTML=`<td>${escapeHtml(x.customer)}</td><td>${escapeHtml(x.phone||'')}</td><td>${escapeHtml(x.item)}</td><td>${money(Number(x.total)-Number(x.paid))}</td><td>${escapeHtml(x.date)}</td><td><button class="primary" onclick="recordPayment(${x.id})">Record payment</button><br><small class="muted">Balance: ${money(Number(x.total)-Number(x.paid))}</small></td><td>${due?'<span class="due-reminder">Due</span>':'<span class="muted">'+last+'</span>'}<br><button class="secondary" onclick="sendReminder(${x.id})">Send reminder</button><br><button class="receipt-btn" onclick="sendReceipt(${x.id})">WhatsApp receipt</button></td>`;debtBody.appendChild(tr)})}
 const expBody=$('expBody');if(expBody){expBody.innerHTML='';data.expenses.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.cat)}</td><td>${escapeHtml(x.desc||'')}</td><td>${money(x.amt)}</td><td>${escapeHtml(x.user||'')}</td>`;expBody.appendChild(tr)})}
-const auditBody=$('auditBody');if(auditBody){auditBody.innerHTML='';data.audit.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.time)}</td><td>${escapeHtml(x.user||'')}</td><td>${escapeHtml(x.role||'')}</td><td>${escapeHtml(x.action||'')}</td><td>${escapeHtml(x.details||'')}</td>`;auditBody.appendChild(tr)})}updateItemSuggestions($('sItem')?.value||'')}
+const auditBody=$('auditBody');if(auditBody){auditBody.innerHTML='';data.audit.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.time)}</td><td>${escapeHtml(x.user||'')}</td><td>${escapeHtml(x.role||'')}</td><td>${escapeHtml(x.action||'')}</td><td>${escapeHtml(x.details||'')}</td>`;auditBody.appendChild(tr)})}
+applyRoleAccess();updateItemSuggestions($('sItem')?.value||'')}
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
 function dailyReport(){let s=data.sales.filter(x=>x.date===today()&&!x.voided),e=data.expenses.filter(x=>x.date===today()),total=s.reduce((a,x)=>a+x.total,0),paid=s.reduce((a,x)=>a+x.paid,0),ex=e.reduce((a,x)=>a+x.amt,0);reportBox.innerHTML=`<h3>${data.biz} — Daily Report</h3><p>Date: ${today()}</p><p>Total sales: <b>${money(total)}</b></p><p>Collected: <b>${money(paid)}</b></p><p>Outstanding: <b>${money(total-paid)}</b></p><p>Expenses: <b>${money(ex)}</b></p><p>Net after expenses: <b>${money(paid-ex)}</b></p>`}
@@ -461,6 +561,56 @@ function toggleMenu(){
     if(bd)bd.classList.toggle('open');
   }
 }
+async function createAttendant(){
+  if(!isOwner()) return alert('Only the Owner can create an attendant.');
+
+  const email=$('attendantEmail')?.value.trim().toLowerCase();
+  const password=$('attendantPassword')?.value||'';
+  const msg=$('attendantMsg');
+
+  if(msg) msg.textContent='';
+  if(!email) return alert('Enter the attendant email address.');
+  if(!password || password.length<6) return alert('Enter a temporary password of at least 6 characters.');
+
+  const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
+  if(sessionError || !sessionData.session){
+    return alert('Your Owner session has expired. Please log in again.');
+  }
+
+  if(msg) msg.textContent='Creating attendant...';
+
+  try{
+    const response=await fetch(SUPABASE_URL+'/functions/v1/create-attendant',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+sessionData.session.access_token
+      },
+      body:JSON.stringify({email,password})
+    });
+
+    const result=await response.json().catch(()=>({}));
+
+    if(!response.ok){
+      const errorText=result.error||'Could not create the attendant.';
+      if(msg) msg.textContent=errorText;
+      return alert(errorText);
+    }
+
+    log('Attendant created',email);
+    save();
+
+    $('attendantEmail').value='';
+    $('attendantPassword').value='';
+    if(msg) msg.textContent='Attendant created successfully.';
+    alert('Attendant account created successfully. The attendant can now log in with that email and temporary password.');
+  }catch(error){
+    console.error(error);
+    if(msg) msg.textContent='Could not connect to the server.';
+    alert('Could not connect to the attendant service. Please try again.');
+  }
+}
+
 function savePermissions(){
   log('Permissions updated','Attendant permissions saved');
   save();
