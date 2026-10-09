@@ -240,7 +240,7 @@ button,.btn{min-height:42px}
 <div class="card"><div class="formgrid"><div><label>Report month</label><input id="reportMonth" type="month"></div><div><label>&nbsp;</label><button onclick="monthlyReport()">Generate selected month</button></div><div><label>&nbsp;</label><button class="secondary" onclick="downloadMonthlyReport()">Download CSV</button></div><div><label>&nbsp;</label><button class="secondary" onclick="printReport()">Print / Save PDF</button></div></div></div>
 <div class="toolbar" style="margin-top:12px"><button onclick="dailyReport()">Generate today's report</button><button class="secondary" onclick="emailReport()">Email report</button></div><div id="reportBox" class="card"><p class="muted">Choose a report month.</p></div></section>
 
-<section id="audit" class="section ownerOnly"><h2>Audit Trail</h2><p class="muted">Read-only activity history. Owner only.</p><div class="tablewrap"><table><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></section>
+<section id="audit" class="section"><h2>Audit Trail</h2><p class="muted">Read-only activity history. Owner only.</p><div class="tablewrap"><table><thead><tr><th>Time</th><th>User</th><th>Role</th><th>Action</th><th>Details</th></tr></thead><tbody id="auditBody"></tbody></table></div></section>
 
 <section id="users" class="section ownerOnly"><h2>Users & Rights</h2>
 <div class="card">
@@ -256,7 +256,9 @@ button,.btn{min-height:42px}
 <div class="card" style="margin-top:18px"><p>Owner controls what attendants can access. Attendants cannot open or change this section.</p>
 <div class="formgrid">
 <label><input type="checkbox" checked> Record sales</label><label><input type="checkbox" checked> View stock</label><label><input type="checkbox"> Edit sales</label><label><input type="checkbox"> Void sales</label><label><input type="checkbox"> Add expenses</label><label><input type="checkbox"> View debtors</label><label><input type="checkbox"> Send receipts</label><label><input type="checkbox"> Send reminders</label>
-</div><br><button onclick="savePermissions()">Save permissions</button></div></section>
+</div><br><button onclick="savePermissions()">Save permissions</button></div>
+
+<div class="card ownerOnly" style="margin-top:18px"><h3>Attendants</h3><p class="muted">Manage attendants for this business. Deactivating an attendant keeps their account history but prevents future login.</p><div id="attendantsMsg" class="small muted" style="margin:10px 0"></div><div id="attendantsList"></div></div></section>
 
 <section id="calculator" class="section"><h2>Calculator</h2><div class="card" style="max-width:420px"><input id="calc" readonly style="font-size:22px;text-align:right"><div class="formgrid" style="grid-template-columns:repeat(4,1fr);margin-top:10px">
 <button onclick="cp('7')">7</button><button onclick="cp('8')">8</button><button onclick="cp('9')">9</button><button onclick="cp('/')">÷</button>
@@ -425,7 +427,7 @@ async function changePassword(){
   const {error}=await supabaseClient.auth.updateUser({password});
   alert(error?error.message:'Password changed successfully.'); 
 }
-function isOwner(){return String(data.role||'').trim().toLowerCase()==='owner'}
+function isOwner(){return String(data.role||'').toLowerCase()==='owner'}
 function applyRoleAccess(){
   document.querySelectorAll('.ownerOnly').forEach(el=>el.classList.toggle('hiddenByRole',!isOwner()));
   if(!isOwner() && document.getElementById('users')?.classList.contains('show')) show('dashboard',document.querySelector('.nav'));
@@ -482,7 +484,7 @@ function sendReceipt(id){
 function printReceipt(id){
   const sale=data.sales.find(x=>x.id===id);if(!sale)return;const balance=Math.max(0,Number(sale.total)-Number(sale.paid));const w=window.open('','_blank');if(!w)return alert('Please allow pop-ups to print the receipt.');w.document.write(`<html><head><title>BizTracker Receipt</title><style>body{font-family:Arial;padding:24px;max-width:420px;margin:auto}h2{margin-bottom:4px}p{margin:6px 0}</style></head><body><h2>${escapeHtml(data.biz||'BizTracker')}</h2><p>Receipt</p><hr><p>Date: ${escapeHtml(sale.date)}</p><p>Customer: ${escapeHtml(sale.customer||'Customer')}</p><p>Item: ${escapeHtml(sale.item)}</p><p>Quantity: ${sale.qty}</p><p>Unit price: ${money(sale.price)}</p><p>Total: ${money(sale.total)}</p><p>Paid: ${money(sale.paid)}</p><p>Balance: ${money(balance)}</p><p>Status: ${status(sale.total,sale.paid)}</p><hr><p>Thank you for your business.</p><script>window.print();<\/script></body></html>`);w.document.close();}
 
-function show(id,el){if((id==='users'||id==='audit')&&!isOwner()){alert('Only the Owner can access this section.');return;}document.querySelectorAll('.section').forEach(x=>x.classList.remove('show'));const section=$(id);if(section)section.classList.add('show');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');const sidebar=document.querySelector('nav'),backdrop=$('drawerBackdrop');if(sidebar)sidebar.classList.remove('open');if(backdrop)backdrop.classList.remove('open');document.body.classList.remove('menu-open');if(id==='sales')updateItemSuggestions($('sItem')?.value||'')}
+function show(id,el){if((id==='users'||id==='audit')&&!isOwner()){alert('Only the Owner can access this section.');return;}document.querySelectorAll('.section').forEach(x=>x.classList.remove('show'));const section=$(id);if(section)section.classList.add('show');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');const sidebar=document.querySelector('nav'),backdrop=$('drawerBackdrop');if(sidebar)sidebar.classList.remove('open');if(backdrop)backdrop.classList.remove('open');document.body.classList.remove('menu-open');if(id==='sales')updateItemSuggestions($('sItem')?.value||'');if(id==='users'&&isOwner())loadAttendants()}
 function status(total,paid){return paid>=total?'Fully paid':paid>0?'Partially paid':'Unpaid'}
 function addStock(){const item=$('stItem').value.trim(),qty=Number($('stQty').value),price=Number($('stPrice').value);if(!item||!Number.isFinite(qty)||qty<=0||!Number.isFinite(price)||price<0)return alert('Enter item, quantity and selling price.');let existing=data.stock.find(s=>String(s.item).trim().toLowerCase()===item.toLowerCase());if(existing){const old=Number(existing.qty)||0;existing.qty=old+qty;existing.price=price;log('Stock added',`${existing.item}: ${old} → ${existing.qty} (+${qty})`)}else{data.stock.push({id:Date.now(),item,qty,startQty:qty,price});log('Stock added',`${item}: ${qty} units at ${money(price)}`)}$('stItem').value='';$('stQty').value='';$('stPrice').value='';save();alert('Stock added successfully.')}
 function selectStockItem(item){$('sItem').value=item.item;$('sPrice').value=Number(item.price)||0;closeItemSuggestions();$('sQty').focus()}
@@ -524,8 +526,7 @@ const salesBody=$('salesBody');if(salesBody){salesBody.innerHTML='';data.sales.f
 const recent=$('recentSalesBody');if(recent){recent.innerHTML='';data.sales.slice(0,8).forEach(x=>{const tr=document.createElement('tr');const st=x.voided?`<span class="pill voided-pill">Voided</span>`:`<span class="pill ${Number(x.paid)>=Number(x.total)?'paid':Number(x.paid)>0?'partial':'unpaid'}">${status(x.total,x.paid)}</span>`;tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.item)}</td><td>${x.qty}</td><td>${money(x.total)}</td><td>${st}</td><td>${escapeHtml(x.customer||'—')}</td><td>—</td>`;recent.appendChild(tr)})}
 const debtBody=$('debtBody');if(debtBody){debtBody.innerHTML='';data.sales.filter(x=>!x.voided&&Number(x.total)>Number(x.paid)&&x.customer).forEach(x=>{const tr=document.createElement('tr');const due=reminderDue(x);const last=x.lastReminderAt?`Last sent ${new Date(x.lastReminderAt).toLocaleDateString()}`:'Not sent';tr.innerHTML=`<td>${escapeHtml(x.customer)}</td><td>${escapeHtml(x.phone||'')}</td><td>${escapeHtml(x.item)}</td><td>${money(Number(x.total)-Number(x.paid))}</td><td>${escapeHtml(x.date)}</td><td><button class="primary" onclick="recordPayment(${x.id})">Record payment</button><br><small class="muted">Balance: ${money(Number(x.total)-Number(x.paid))}</small></td><td>${due?'<span class="due-reminder">Due</span>':'<span class="muted">'+last+'</span>'}<br><button class="secondary" onclick="sendReminder(${x.id})">Send reminder</button><br><button class="receipt-btn" onclick="sendReceipt(${x.id})">WhatsApp receipt</button></td>`;debtBody.appendChild(tr)})}
 const expBody=$('expBody');if(expBody){expBody.innerHTML='';data.expenses.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.date)}</td><td>${escapeHtml(x.cat)}</td><td>${escapeHtml(x.desc||'')}</td><td>${money(x.amt)}</td><td>${escapeHtml(x.user||'')}</td>`;expBody.appendChild(tr)})}
-const auditBody=$('auditBody');if(auditBody){auditBody.innerHTML='';data.audit.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.time)}</td><td>${escapeHtml(x.user||'')}</td><td>${escapeHtml(x.role||'')}</td><td>${escapeHtml(x.action||'')}</td><td>${escapeHtml(x.details||'')}</td>`;auditBody.appendChild(tr)})}
-applyRoleAccess();updateItemSuggestions($('sItem')?.value||'')}
+const auditBody=$('auditBody');if(auditBody){auditBody.innerHTML='';data.audit.forEach(x=>{const tr=document.createElement('tr');tr.innerHTML=`<td>${escapeHtml(x.time)}</td><td>${escapeHtml(x.user||'')}</td><td>${escapeHtml(x.role||'')}</td><td>${escapeHtml(x.action||'')}</td><td>${escapeHtml(x.details||'')}</td>`;auditBody.appendChild(tr)})}updateItemSuggestions($('sItem')?.value||'')}
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
 function dailyReport(){let s=data.sales.filter(x=>x.date===today()&&!x.voided),e=data.expenses.filter(x=>x.date===today()),total=s.reduce((a,x)=>a+x.total,0),paid=s.reduce((a,x)=>a+x.paid,0),ex=e.reduce((a,x)=>a+x.amt,0);reportBox.innerHTML=`<h3>${data.biz} — Daily Report</h3><p>Date: ${today()}</p><p>Total sales: <b>${money(total)}</b></p><p>Collected: <b>${money(paid)}</b></p><p>Outstanding: <b>${money(total-paid)}</b></p><p>Expenses: <b>${money(ex)}</b></p><p>Net after expenses: <b>${money(paid-ex)}</b></p>`}
@@ -561,6 +562,92 @@ function toggleMenu(){
     if(bd)bd.classList.toggle('open');
   }
 }
+async function loadAttendants(){
+  if(!isOwner()) return;
+  const list=$('attendantsList'),msg=$('attendantsMsg');
+  if(!list)return;
+  if(msg)msg.textContent='Loading attendants...';
+  list.innerHTML='';
+  try{
+    const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
+    if(sessionError||!sessionData.session){
+      if(msg)msg.textContent='Your Owner session has expired. Please log in again.';
+      return;
+    }
+    const response=await fetch(SUPABASE_URL+'/functions/v1/list-attendants',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+sessionData.session.access_token
+      },
+      body:'{}'
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok){
+      if(msg)msg.textContent=result.error||'Could not load attendants.';
+      return;
+    }
+    const attendants=Array.isArray(result.attendants)?result.attendants:[];
+    if(!attendants.length){
+      if(msg)msg.textContent='No attendants have been created yet.';
+      return;
+    }
+    if(msg)msg.textContent='';
+    const table=document.createElement('table');
+    table.innerHTML='<thead><tr><th>Email</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody>';
+    const body=table.querySelector('tbody');
+    attendants.forEach(attendant=>{
+      const tr=document.createElement('tr');
+      const status=String(attendant.status||'Active');
+      const active=status.toLowerCase()!=='inactive';
+      tr.innerHTML=`<td>${escapeHtml(attendant.email||'Unknown email')}</td><td>${escapeHtml(status)}</td><td>${active?`<button class="secondary" onclick="deactivateAttendant('${attendant.id}')">Deactivate</button>`:'<span class="muted">Deactivated</span>'}</td>`;
+      body.appendChild(tr);
+    });
+    list.appendChild(table);
+  }catch(error){
+    console.error(error);
+    if(msg)msg.textContent='Could not connect to the attendant service.';
+  }
+}
+
+async function deactivateAttendant(attendantId){
+  if(!isOwner())return alert('Only the Owner can deactivate an attendant.');
+  if(!attendantId)return;
+  const ok=confirm('Deactivate this attendant?\n\nThey will no longer be able to log in. Their existing records will remain.');
+  if(!ok)return;
+  const msg=$('attendantsMsg');
+  if(msg)msg.textContent='Deactivating attendant...';
+  try{
+    const {data:sessionData,error:sessionError}=await supabaseClient.auth.getSession();
+    if(sessionError||!sessionData.session){
+      if(msg)msg.textContent='Your Owner session has expired. Please log in again.';
+      return;
+    }
+    const response=await fetch(SUPABASE_URL+'/functions/v1/deactivate-attendant',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+sessionData.session.access_token
+      },
+      body:JSON.stringify({attendantId})
+    });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok){
+      const errorText=result.error||'Could not deactivate the attendant.';
+      if(msg)msg.textContent=errorText;
+      return alert(errorText);
+    }
+    log('Attendant deactivated',attendantId);
+    save();
+    await loadAttendants();
+    alert('Attendant deactivated successfully.');
+  }catch(error){
+    console.error(error);
+    if(msg)msg.textContent='Could not connect to the attendant service.';
+    alert('Could not connect to the attendant service. Please try again.');
+  }
+}
+
 async function createAttendant(){
   if(!isOwner()) return alert('Only the Owner can create an attendant.');
 
@@ -599,6 +686,7 @@ async function createAttendant(){
 
     log('Attendant created',email);
     save();
+    await loadAttendants();
 
     $('attendantEmail').value='';
     $('attendantPassword').value='';
